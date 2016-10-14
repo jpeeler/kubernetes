@@ -114,5 +114,37 @@ transport.
 
 ## Proposed Design
 
+The new proposed method of utilizing secrets, configmaps, and downward API is 
+more succinct, while also allowing the data to be populated in the same volume:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-test
+spec:
+  containers:
+  - name: secret-test
+    image: jpeeler/scratch
+    volumeMounts:
+    - name: all-in-one
+      mountPath: "/system-volume"
+      readOnly: true
+  volumes:
+  - name: all-in-one
+    items:
+    - secretName: mysecret
+      items:
+      - key: username
+        path: my-group/my-username
+    - downwardAPI:
+        fieldPath: status.podIP
+        resourcePath: limits.cpu
+    - configMapName: myconfigmap
+      items:
+      - key: config
+        data:
+          special.how: very 
+```
 
 ### API changes
