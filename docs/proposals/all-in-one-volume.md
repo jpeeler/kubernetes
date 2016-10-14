@@ -11,9 +11,13 @@ currently.
 
 ## Constraints and Assumptions
 
-There can not be an overlap of resources with the same paths. If a conflict
-does occur, a numeric prefix will be put in the path signifying the order that
-the resources were specified.
+1.  The volume types must remain unchanged for backward compatability.
+
+2.  There will be a new volume type for this proposed functionality, but no
+    other API changes.
+
+3.  The new volume type should support atomic updates in the event of an input
+    change.
 
 ## Use Cases
 
@@ -40,7 +44,7 @@ metadata:
   name: volume-test
 spec:
   containers:
-  - name: secret-test
+  - name: container-test
     image: jpeeler/scratch
     volumeMounts:
     - name: mysecret
@@ -81,7 +85,7 @@ spec:
 There are several combinations of resources that can be used at once. All of
 which need to be considered:
 
-Combination: ConfigMap + Secrets + Downward API
+### ConfigMap + Secrets + Downward API
 
 The user wishes to deploy containers with configuration data that includes
 passwords. An application using these resources could be deploying OpenStack
@@ -90,21 +94,21 @@ depending on if the services are going to be used for production or for
 testing. If a pod is labeled with production or testing, the downward API
 selector metadata.labels can be used to produce the correct OpenStack configs.
 
-Combination: ConfigMap + Secrets
+### ConfigMap + Secrets
 
 Again, the user wishes to deploy containers with configuration data that
 includes passwords. In this case with MariaDB running, the operator may wish
 the container to have a ~/.my.cnf file that includes the username and password
 for the database.
 
-Combination: ConfigMap + Downward API
+### ConfigMap + Downward API
 
 In this case, the user wishes to generate a config including the pod’s name
 (available via the metadata.name selector). This application may then pass the
 pod name along with requests in order to easily determine the source without
 using IP tracking.
 
-Use Case: Secrets + Downward API
+### Secrets + Downward API
 
 A user may wish to use a secret as a public key to encrypt the namespace of
 the pod (available via the metadata.namespace selector). This example may be
@@ -112,10 +116,12 @@ the most contrived, but perhaps the operator wishes to use the application to
 deliver the namespace information securely without using an encrypted
 transport.
 
-## Proposed Design
+### Resources configured with the same path
 
-The new proposed method of utilizing secrets, configmaps, and downward API is 
-more succinct, while also allowing the data to be populated in the same volume:
+There can not be an overlap of resources with the same paths on a given volume.
+If a conflict does occur, a numeric prefix will be put in the path signifying
+the order that the resources were specified in the pod spec. An example of this
+resolution is as follows:
 
 ```yaml
 apiVersion: v1
@@ -124,7 +130,47 @@ metadata:
   name: volume-test
 spec:
   containers:
-  - name: secret-test
+  - name: container-test
+    image: jpeeler/scratch
+    volumeMounts:
+    - name: all-in-one
+      mountPath: "/system-volume"
+      readOnly: true
+  volumes:
+  - name: all-in-one
+    items:
+    - secretName: mysecret
+      items:
+      - key: username
+        path: my-group/data
+    - configMapName: myconfigmap
+      items:
+      - key: config
+        path: my-group/data
+```
+
+Note the specified path for mysecret and myconfigmap are the same. The contents
+of /system-volume could be:
+
+/system-volume/my-group/data/1/some-secret-data!
+/system-volume/my-group/data/2/configmap-data
+
+The data values would depend upon the values configured by the user.
+
+## Proposed Design
+
+The new proposed method of utilizing secrets, configmaps, and downward API is 
+more succinct, while also allowing the data to be populated in the same volume.
+An example is demonstrated below:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-test
+spec:
+  containers:
+  - name: container-test
     image: jpeeler/scratch
     volumeMounts:
     - name: all-in-one
@@ -143,8 +189,9 @@ spec:
     - configMapName: myconfigmap
       items:
       - key: config
-        data:
-          special.how: very 
+        path: my-group/my-config
 ```
 
-### API changes
+### Proposed API objects
+
+### Code changes
