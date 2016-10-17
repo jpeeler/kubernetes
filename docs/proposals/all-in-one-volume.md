@@ -31,6 +31,10 @@ currently.
     specifying paths for each item, so that I can have full control over the
     contents of that volume.
 
+A user should be able to map any combination of resources mentioned above into a
+single directory. The same available options for specifying the location within
+a volume for each resource is available with the new single volume as well.
+
 ## Current State Overview
 
 The only way of utilizing secrets, configmaps, and downward API currently is
@@ -138,15 +142,16 @@ spec:
       readOnly: true
   volumes:
   - name: all-in-one
-    items:
-    - secretName: mysecret
+    system:
       items:
-      - key: username
-        path: my-group/data
-    - configMapName: myconfigmap
-      items:
-      - key: config
-        path: my-group/data
+      - secretName: mysecret
+        items:
+        - key: username
+          path: my-group/data
+      - configMapName: myconfigmap
+        items:
+        - key: config
+          path: my-group/data
 ```
 
 Note the specified path for mysecret and myconfigmap are the same. The contents
@@ -178,18 +183,25 @@ spec:
       readOnly: true
   volumes:
   - name: all-in-one
-    items:
-    - secretName: mysecret
+    system:
       items:
-      - key: username
-        path: my-group/my-username
-    - downwardAPI:
-        fieldPath: status.podIP
-        resourcePath: limits.cpu
-    - configMapName: myconfigmap
-      items:
-      - key: config
-        path: my-group/my-config
+      - secretName: mysecret
+        items:
+        - key: username
+          path: my-group/my-username
+      - downwardAPI:
+        items:
+        - path: "labels"
+          fieldRef:
+            fieldPath: metadata.labels
+        - path: "cpu_limit"
+          resourceFieldRef:
+            containerName: container-test
+            resource: limits.cpu
+      - configMapName: myconfigmap
+        items:
+        - key: config
+          path: my-group/my-config
 ```
 
 ### Proposed API objects
