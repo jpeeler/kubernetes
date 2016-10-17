@@ -206,4 +206,26 @@ spec:
 
 ### Proposed API objects
 
+```go
+type VolumeAllInOneSource struct {
+	Items []VolumeKeys `json:"items,omitempty"`
+}
+
+type VolumeKeys struct {
+	SecretName    string `json:"secretName,omitempty"`
+	ConfigMapName string `json:"configMapName,omitempty"`
+	DownwardAPI   string `json:"downwardAPI,omitempty"`
+
+	Items  []KeyToPath             `json:"items,omitempty"`
+    // JPEELER: this part is probably invalid
+	DItems []DownwardAPIVolumeFile `json:"items,omitempty"`
+}
+```
+
 ### Code changes
+
+Add to VolumeSource struct:
+
+```go
+VolumeAIO *VolumeAllInOneSource `json:"system,omitempty"`
+```
