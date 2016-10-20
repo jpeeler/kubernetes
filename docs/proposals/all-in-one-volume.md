@@ -1,21 +1,20 @@
 ## Abstract
 
-A proposal for enabling users to create a volume populated from secrets,
-configmaps, and downward API.
+Describes a proposal for a new volume type that can project secrets,
+configmaps, and downward API items.
 
 ## Motivation
 
-This new feature will allow the user a method of combining data from different
-sources within the same volume, which is not something that can be done
-currently.
+Users often need to build directories that contain multiple types of
+configuration and secret data. For example, a configuration directory for some
+software package may contain both config files and credentials. Currently, there
+is no way to achieve this in Kubernetes without scripting inside of a container.
 
 ## Constraints and Assumptions
 
 1.  The volume types must remain unchanged for backward compatability.
-
 2.  There will be a new volume type for this proposed functionality, but no
     other API changes.
-
 3.  The new volume type should support atomic updates in the event of an input
     change.
 
@@ -25,15 +24,21 @@ currently.
     from multiple secrets, configmaps, and with downward API information, so
     that I can synthesize a single directory with various sources of
     information.
-
 2.  As a user, I want to populate a single volume with the keys from multiple
     secrets, configmaps, and with downward API information, explicitly
     specifying paths for each item, so that I can have full control over the
     contents of that volume.
 
 A user should be able to map any combination of resources mentioned above into a
-single directory. The same available options for specifying the location within
-a volume for each resource is available with the new single volume as well.
+single directory. There are plenty of examples of software that needs to be
+configured both with config files and secret data. The combination of having
+that data not only accessible, but in the same location provides for an easier
+user experience.
+
+In some cases, it may be easier to further define the path within the volume
+for specific resources. Hence the same options that are available for specifying
+the location within a volume for each resource is also available with the new
+single volume.
 
 ## Current State Overview
 
@@ -86,8 +91,10 @@ spec:
 
 ## Analysis
 
-There are several combinations of resources that can be used at once. All of
-which need to be considered:
+There are several combinations of resources that can be used at once, which 
+all warrant consideration. The combinations are listed with one instance of
+each resource, but real world usage will support multiple instances of a
+specific resource too.
 
 ### ConfigMap + Secrets + Downward API
 
@@ -122,10 +129,42 @@ transport.
 
 ### Resources configured with the same path
 
-There can not be an overlap of resources with the same paths on a given volume.
-If a conflict does occur, a numeric prefix will be put in the path signifying
+In the event of a user not explicitly defining keys for pathing within a volume,
+there can not be an overlap of resources with the same paths on a given volume.
+If a conflict does occur, a numeric prefix will be put in the name signifying
 the order that the resources were specified in the pod spec. An example of this
 resolution is as follows:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-test
+spec:
+  containers:
+  - name: container-test
+    image: jpeeler/scratch
+    volumeMounts:
+    - name: all-in-one
+      mountPath: "/system-volume"
+      readOnly: true
+  volumes:
+  - name: all-in-one
+    system:
+      items:
+      - secretName: mysecret
+      - configMapName: myconfigmap
+```
+
+Here the assumption is that the data values configured for each resource is the
+same. The contents of /system-volume may look like this:
+
+/system-volume/1-very-generic
+/system-volume/2-very-generic
+
+In the event the user specifies any keys with the same path, the pod spec will
+not be accepted as valid. Note the specified path for mysecret and myconfigmap
+are the same:
 
 ```yaml
 apiVersion: v1
@@ -154,19 +193,33 @@ spec:
           path: my-group/data
 ```
 
-Note the specified path for mysecret and myconfigmap are the same. The contents
-of /system-volume could be:
+## Code changes
 
-/system-volume/my-group/data/1/some-secret-data!
-/system-volume/my-group/data/2/configmap-data
+### Proposed API objects
 
-The data values would depend upon the values configured by the user.
+```go
+type SystemVolumeSource struct {
+	Items []SystemVolumeProjection `json:"items,omitempty"`
+}
 
-## Proposed Design
+type SystemVolumeProjection struct {
+	SecretName    string `json:"secretName,omitempty"`
+	ConfigMapName string `json:"configMapName,omitempty"`
+	DownwardAPI   string `json:"downwardAPI,omitempty"`
+}
+```
 
-The new proposed method of utilizing secrets, configmaps, and downward API is 
-more succinct, while also allowing the data to be populated in the same volume.
-An example is demonstrated below:
+### Additional required modifications
+
+Add to VolumeSource struct:
+
+```go
+SystemVolume *SystemVolumeSource `json:"system,omitempty"`
+```
+
+The appropriate conversion code would need to be generated for v1 as well.
+
+## Sample podspec with new functionality
 
 ```yaml
 apiVersion: v1
@@ -202,30 +255,4 @@ spec:
         items:
         - key: config
           path: my-group/my-config
-```
-
-### Proposed API objects
-
-```go
-type VolumeAllInOneSource struct {
-	Items []VolumeKeys `json:"items,omitempty"`
-}
-
-type VolumeKeys struct {
-	SecretName    string `json:"secretName,omitempty"`
-	ConfigMapName string `json:"configMapName,omitempty"`
-	DownwardAPI   string `json:"downwardAPI,omitempty"`
-
-	Items  []KeyToPath             `json:"items,omitempty"`
-    // JPEELER: this part is probably invalid
-	DItems []DownwardAPIVolumeFile `json:"items,omitempty"`
-}
-```
-
-### Code changes
-
-Add to VolumeSource struct:
-
-```go
-VolumeAIO *VolumeAllInOneSource `json:"system,omitempty"`
 ```
