@@ -29,22 +29,25 @@ is no way to achieve this in Kubernetes without scripting inside of a container.
     specifying paths for each item, so that I can have full control over the
     contents of that volume.
 
+### Populating a single volume without pathing
+
 A user should be able to map any combination of resources mentioned above into a
 single directory. There are plenty of examples of software that needs to be
 configured both with config files and secret data. The combination of having
 that data not only accessible, but in the same location provides for an easier
 user experience.
 
-In some cases, it may be easier to further define the path within the volume
-for specific resources. Hence the same options that are available for specifying
-the location within a volume for each resource is also available with the new
-single volume.
+### Populating a single volume with pathing
+
+Currently it is possible to define the path within a volume for specific
+resources. Therefore the same is true for each resource contained within the
+new single volume.
 
 ## Current State Overview
 
 The only way of utilizing secrets, configmaps, and downward API currently is
-to access the data using separate pathing as shown in the volumeMounts section
-below:
+to access the data using separate mount paths as shown in the volumeMounts
+section below:
 
 ```yaml
 apiVersion: v1
@@ -54,7 +57,7 @@ metadata:
 spec:
   containers:
   - name: container-test
-    image: jpeeler/scratch
+    image: busybox
     volumeMounts:
     - name: mysecret
       mountPath: "/secrets"
@@ -127,7 +130,7 @@ the most contrived, but perhaps the operator wishes to use the application to
 deliver the namespace information securely without using an encrypted
 transport.
 
-### Resources configured with the same path
+### Collisions between keys when all keys from a resource are projected
 
 In the event of a user not explicitly defining keys for pathing within a volume,
 there can not be an overlap of resources with the same paths on a given volume.
@@ -143,7 +146,7 @@ metadata:
 spec:
   containers:
   - name: container-test
-    image: jpeeler/scratch
+    image: busybox
     volumeMounts:
     - name: all-in-one
       mountPath: "/system-volume"
@@ -162,6 +165,8 @@ same. The contents of /system-volume may look like this:
 /system-volume/1-very-generic
 /system-volume/2-very-generic
 
+### Collisions between keys when a configured path is identical
+
 In the event the user specifies any keys with the same path, the pod spec will
 not be accepted as valid. Note the specified path for mysecret and myconfigmap
 are the same:
@@ -174,7 +179,7 @@ metadata:
 spec:
   containers:
   - name: container-test
-    image: jpeeler/scratch
+    image: busybox
     volumeMounts:
     - name: all-in-one
       mountPath: "/system-volume"
@@ -192,6 +197,12 @@ spec:
         - key: config
           path: my-group/data
 ```
+
+### Collisions when one path is explicit and the other is automatically projected
+
+In the event that there is a collision due to a user specified path matching
+data that is automatically projected, resolution will be done using the same
+numeric prefix addition as described in the first scenario.
 
 ## Code changes
 
@@ -219,7 +230,9 @@ SystemVolume *SystemVolumeSource `json:"system,omitempty"`
 
 The appropriate conversion code would need to be generated for v1 as well.
 
-## Sample podspec with new functionality
+## Examples
+
+### Sample pod spec with a secret, a downward API, and a configmap
 
 ```yaml
 apiVersion: v1
@@ -229,7 +242,7 @@ metadata:
 spec:
   containers:
   - name: container-test
-    image: jpeeler/scratch
+    image: busybox
     volumeMounts:
     - name: all-in-one
       mountPath: "/system-volume"
@@ -255,4 +268,32 @@ spec:
         items:
         - key: config
           path: my-group/my-config
+```
+
+### Sample pod spec with multiple secrets with a non-default permission mode set
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-test
+spec:
+  containers:
+  - name: container-test
+    image: busybox
+    volumeMounts:
+    - name: all-in-one
+      mountPath: "/system-volume"
+      readOnly: true
+  volumes:
+  - name: all-in-one
+    system:
+      items:
+      - secretName: mysecret
+        items:
+        - key: username
+          path: my-group/my-username
+        - key: password
+          path: my-group/my-password
+          mode: 511
 ```
