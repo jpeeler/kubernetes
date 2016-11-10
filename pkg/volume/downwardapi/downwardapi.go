@@ -175,7 +175,7 @@ func (b *downwardAPIVolumeMounter) SetUpAt(dir string, fsGroup *int64) error {
 		return err
 	}
 
-	data, err := b.collectData(b.source.DefaultMode)
+	data, err := b.CollectData(b.source.DefaultMode)
 	if err != nil {
 		glog.Errorf("Error preparing data for downwardAPI volume %v for pod %v/%v: %s", b.volName, b.pod.Namespace, b.pod.Name, err.Error())
 		return err
@@ -203,10 +203,10 @@ func (b *downwardAPIVolumeMounter) SetUpAt(dir string, fsGroup *int64) error {
 	return nil
 }
 
-// collectData collects requested downwardAPI in data map.
+// CollectData collects requested downwardAPI in data map.
 // Map's key is the requested name of file to dump
 // Map's value is the (sorted) content of the field to be dumped in the file.
-func (d *downwardAPIVolume) collectData(defaultMode *int32) (map[string]volumeutil.FileProjection, error) {
+func (d *downwardAPIVolume) CollectData(defaultMode *int32) (map[string]volumeutil.FileProjection, error) {
 	if defaultMode == nil {
 		return nil, fmt.Errorf("No defaultMode used, not even the default value for it")
 	}

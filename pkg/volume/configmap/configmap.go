@@ -182,7 +182,7 @@ func (b *configMapVolumeMounter) SetUpAt(dir string, fsGroup *int64) error {
 		len(configMap.Data),
 		totalBytes)
 
-	payload, err := makePayload(b.source.Items, configMap, b.source.DefaultMode)
+	payload, err := MakePayload(b.source.Items, configMap, b.source.DefaultMode)
 	if err != nil {
 		return err
 	}
@@ -209,7 +209,7 @@ func (b *configMapVolumeMounter) SetUpAt(dir string, fsGroup *int64) error {
 	return nil
 }
 
-func makePayload(mappings []api.KeyToPath, configMap *api.ConfigMap, defaultMode *int32) (map[string]volumeutil.FileProjection, error) {
+func MakePayload(mappings []api.KeyToPath, configMap *api.ConfigMap, defaultMode *int32) (map[string]volumeutil.FileProjection, error) {
 	if defaultMode == nil {
 		return nil, fmt.Errorf("No defaultMode used, not even the default value for it")
 	}
