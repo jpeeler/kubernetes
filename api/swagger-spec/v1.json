@@ -18387,6 +18387,10 @@
      "photonPersistentDisk": {
       "$ref": "v1.PhotonPersistentDiskVolumeSource",
       "description": "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine"
+     },
+     "system": {
+      "$ref": "v1.SystemProjections",
+      "description": "Items for all in one resources secrets, configmaps, and downward API"
      }
     }
    },
@@ -18428,6 +18432,10 @@
      "secretName": {
       "type": "string",
       "description": "Name of the secret in the pod's namespace to use. More info: http://kubernetes.io/docs/user-guide/volumes#secrets"
+     },
+     "name": {
+      "$ref": "v1.LocalObjectReference",
+      "description": "same as above, just matches configmap naming for consistency"
      },
      "items": {
       "type": "array",
@@ -18584,6 +18592,38 @@
       "type": "integer",
       "format": "int32",
       "description": "Optional: mode bits to use on created files by default. Must be a value between 0 and 0777. Defaults to 0644. Directories within the path are not affected by this setting. This might be in conflict with other options that affect the file mode, like fsGroup, and the result can be other mode bits set."
+     }
+    }
+   },
+   "v1.SystemProjections": {
+    "id": "v1.SystemProjections",
+    "required": [
+     "sources"
+    ],
+    "properties": {
+     "sources": {
+      "type": "array",
+      "items": {
+       "$ref": "v1.SystemVolumeProjection"
+      }
+     },
+     "defaultMode": {
+      "type": "integer",
+      "format": "int32"
+     }
+    }
+   },
+   "v1.SystemVolumeProjection": {
+    "id": "v1.SystemVolumeProjection",
+    "properties": {
+     "secret": {
+      "$ref": "v1.SecretVolumeSource"
+     },
+     "downwardAPI": {
+      "$ref": "v1.DownwardAPIVolumeSource"
+     },
+     "configMap": {
+      "$ref": "v1.ConfigMapVolumeSource"
      }
     }
    },

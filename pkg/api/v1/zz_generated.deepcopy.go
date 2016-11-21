@@ -184,6 +184,8 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ServiceProxyOptions, InType: reflect.TypeOf(&ServiceProxyOptions{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ServiceSpec, InType: reflect.TypeOf(&ServiceSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ServiceStatus, InType: reflect.TypeOf(&ServiceStatus{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_SystemProjections, InType: reflect.TypeOf(&SystemProjections{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_SystemVolumeProjection, InType: reflect.TypeOf(&SystemVolumeProjection{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_TCPSocketAction, InType: reflect.TypeOf(&TCPSocketAction{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_Taint, InType: reflect.TypeOf(&Taint{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_Toleration, InType: reflect.TypeOf(&Toleration{})},
@@ -3234,6 +3236,7 @@ func DeepCopy_v1_SecretVolumeSource(in interface{}, out interface{}, c *conversi
 		in := in.(*SecretVolumeSource)
 		out := out.(*SecretVolumeSource)
 		out.SecretName = in.SecretName
+		out.LocalObjectReference = in.LocalObjectReference
 		if in.Items != nil {
 			in, out := &in.Items, &out.Items
 			*out = make([]KeyToPath, len(*in))
@@ -3494,6 +3497,67 @@ func DeepCopy_v1_ServiceStatus(in interface{}, out interface{}, c *conversion.Cl
 	}
 }
 
+func DeepCopy_v1_SystemProjections(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*SystemProjections)
+		out := out.(*SystemProjections)
+		if in.Sources != nil {
+			in, out := &in.Sources, &out.Sources
+			*out = make([]SystemVolumeProjection, len(*in))
+			for i := range *in {
+				if err := DeepCopy_v1_SystemVolumeProjection(&(*in)[i], &(*out)[i], c); err != nil {
+					return err
+				}
+			}
+		} else {
+			out.Sources = nil
+		}
+		if in.DefaultMode != nil {
+			in, out := &in.DefaultMode, &out.DefaultMode
+			*out = new(int32)
+			**out = **in
+		} else {
+			out.DefaultMode = nil
+		}
+		return nil
+	}
+}
+
+func DeepCopy_v1_SystemVolumeProjection(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*SystemVolumeProjection)
+		out := out.(*SystemVolumeProjection)
+		if in.Secret != nil {
+			in, out := &in.Secret, &out.Secret
+			*out = new(SecretVolumeSource)
+			if err := DeepCopy_v1_SecretVolumeSource(*in, *out, c); err != nil {
+				return err
+			}
+		} else {
+			out.Secret = nil
+		}
+		if in.DownwardAPI != nil {
+			in, out := &in.DownwardAPI, &out.DownwardAPI
+			*out = new(DownwardAPIVolumeSource)
+			if err := DeepCopy_v1_DownwardAPIVolumeSource(*in, *out, c); err != nil {
+				return err
+			}
+		} else {
+			out.DownwardAPI = nil
+		}
+		if in.ConfigMap != nil {
+			in, out := &in.ConfigMap, &out.ConfigMap
+			*out = new(ConfigMapVolumeSource)
+			if err := DeepCopy_v1_ConfigMapVolumeSource(*in, *out, c); err != nil {
+				return err
+			}
+		} else {
+			out.ConfigMap = nil
+		}
+		return nil
+	}
+}
+
 func DeepCopy_v1_TCPSocketAction(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*TCPSocketAction)
@@ -3730,6 +3794,15 @@ func DeepCopy_v1_VolumeSource(in interface{}, out interface{}, c *conversion.Clo
 			**out = **in
 		} else {
 			out.PhotonPersistentDisk = nil
+		}
+		if in.SystemProjection != nil {
+			in, out := &in.SystemProjection, &out.SystemProjection
+			*out = new(SystemProjections)
+			if err := DeepCopy_v1_SystemProjections(*in, *out, c); err != nil {
+				return err
+			}
+		} else {
+			out.SystemProjection = nil
 		}
 		return nil
 	}

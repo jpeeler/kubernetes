@@ -3073,6 +3073,10 @@ message SecretVolumeSource {
   // +optional
   optional string secretName = 1;
 
+  // same as above, just matches configmap naming for consistency
+  // +optional
+  optional LocalObjectReference name = 4;
+
   // If unspecified, each key-value pair in the Data field of the referenced
   // Secret will be projected into the volume as a file whose name is the
   // key and content is the value. If specified, the listed keys will be
@@ -3360,6 +3364,20 @@ message ServiceStatus {
   optional LoadBalancerStatus loadBalancer = 1;
 }
 
+message SystemProjections {
+  repeated SystemVolumeProjection sources = 1;
+
+  optional int32 defaultMode = 2;
+}
+
+message SystemVolumeProjection {
+  optional SecretVolumeSource secret = 1;
+
+  optional DownwardAPIVolumeSource downwardAPI = 2;
+
+  optional ConfigMapVolumeSource configMap = 3;
+}
+
 // TCPSocketAction describes an action based on opening a socket
 message TCPSocketAction {
   // Number or name of the port to access on the container.
@@ -3558,6 +3576,9 @@ message VolumeSource {
 
   // PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine
   optional PhotonPersistentDiskVolumeSource photonPersistentDisk = 23;
+
+  // Items for all in one resources secrets, configmaps, and downward API
+  optional SystemProjections system = 24;
 }
 
 // Represents a vSphere volume resource.

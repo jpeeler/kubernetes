@@ -12421,6 +12421,12 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Format:      "",
 						},
 					},
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "same as above, just matches configmap naming for consistency",
+							Ref:         spec.MustCreateRef("#/definitions/v1.LocalObjectReference"),
+						},
+					},
 					"items": {
 						SchemaProps: spec.SchemaProps{
 							Description: "If unspecified, each key-value pair in the Data field of the referenced Secret will be projected into the volume as a file whose name is the key and content is the value. If specified, the listed keys will be projected into the specified paths, and unlisted keys will not be present. If a key is specified which is not present in the Secret, the volume setup will error. Paths must be relative and may not contain the '..' path or start with '..'.",
@@ -12445,7 +12451,7 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 			},
 		},
 		Dependencies: []string{
-			"v1.KeyToPath"},
+			"v1.KeyToPath", "v1.LocalObjectReference"},
 	},
 	"v1.SecurityContext": {
 		Schema: spec.Schema{
@@ -12845,6 +12851,61 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 		Dependencies: []string{
 			"v1.LoadBalancerStatus"},
 	},
+	"v1.SystemProjections": {
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"sources": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: spec.MustCreateRef("#/definitions/v1.SystemVolumeProjection"),
+									},
+								},
+							},
+						},
+					},
+					"defaultMode": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
+				},
+				Required: []string{"sources", "defaultMode"},
+			},
+		},
+		Dependencies: []string{
+			"v1.SystemVolumeProjection"},
+	},
+	"v1.SystemVolumeProjection": {
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Properties: map[string]spec.Schema{
+					"secret": {
+						SchemaProps: spec.SchemaProps{
+							Ref: spec.MustCreateRef("#/definitions/v1.SecretVolumeSource"),
+						},
+					},
+					"downwardAPI": {
+						SchemaProps: spec.SchemaProps{
+							Ref: spec.MustCreateRef("#/definitions/v1.DownwardAPIVolumeSource"),
+						},
+					},
+					"configMap": {
+						SchemaProps: spec.SchemaProps{
+							Ref: spec.MustCreateRef("#/definitions/v1.ConfigMapVolumeSource"),
+						},
+					},
+				},
+				Required: []string{"secret", "downwardAPI", "configMap"},
+			},
+		},
+		Dependencies: []string{
+			"v1.ConfigMapVolumeSource", "v1.DownwardAPIVolumeSource", "v1.SecretVolumeSource"},
+	},
 	"v1.TCPSocketAction": {
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
@@ -13192,12 +13253,18 @@ var OpenAPIDefinitions *common.OpenAPIDefinitions = &common.OpenAPIDefinitions{
 							Ref:         spec.MustCreateRef("#/definitions/v1.PhotonPersistentDiskVolumeSource"),
 						},
 					},
+					"system": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Items for all in one resources secrets, configmaps, and downward API",
+							Ref:         spec.MustCreateRef("#/definitions/v1.SystemProjections"),
+						},
+					},
 				},
-				Required: []string{"photonPersistentDisk"},
+				Required: []string{"photonPersistentDisk", "system"},
 			},
 		},
 		Dependencies: []string{
-			"v1.AWSElasticBlockStoreVolumeSource", "v1.AzureDiskVolumeSource", "v1.AzureFileVolumeSource", "v1.CephFSVolumeSource", "v1.CinderVolumeSource", "v1.ConfigMapVolumeSource", "v1.DownwardAPIVolumeSource", "v1.EmptyDirVolumeSource", "v1.FCVolumeSource", "v1.FlexVolumeSource", "v1.FlockerVolumeSource", "v1.GCEPersistentDiskVolumeSource", "v1.GitRepoVolumeSource", "v1.GlusterfsVolumeSource", "v1.HostPathVolumeSource", "v1.ISCSIVolumeSource", "v1.NFSVolumeSource", "v1.PersistentVolumeClaimVolumeSource", "v1.PhotonPersistentDiskVolumeSource", "v1.QuobyteVolumeSource", "v1.RBDVolumeSource", "v1.SecretVolumeSource", "v1.VsphereVirtualDiskVolumeSource"},
+			"v1.AWSElasticBlockStoreVolumeSource", "v1.AzureDiskVolumeSource", "v1.AzureFileVolumeSource", "v1.CephFSVolumeSource", "v1.CinderVolumeSource", "v1.ConfigMapVolumeSource", "v1.DownwardAPIVolumeSource", "v1.EmptyDirVolumeSource", "v1.FCVolumeSource", "v1.FlexVolumeSource", "v1.FlockerVolumeSource", "v1.GCEPersistentDiskVolumeSource", "v1.GitRepoVolumeSource", "v1.GlusterfsVolumeSource", "v1.HostPathVolumeSource", "v1.ISCSIVolumeSource", "v1.NFSVolumeSource", "v1.PersistentVolumeClaimVolumeSource", "v1.PhotonPersistentDiskVolumeSource", "v1.QuobyteVolumeSource", "v1.RBDVolumeSource", "v1.SecretVolumeSource", "v1.SystemProjections", "v1.VsphereVirtualDiskVolumeSource"},
 	},
 	"v1.VsphereVirtualDiskVolumeSource": {
 		Schema: spec.Schema{
