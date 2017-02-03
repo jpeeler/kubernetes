@@ -74,6 +74,27 @@ func SetObjectDefaults_DaemonSet(in *DaemonSet) {
 		if a.VolumeSource.AzureDisk != nil {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 		}
+		if a.VolumeSource.Projected != nil {
+			v1.SetDefaults_Projections(a.VolumeSource.Projected)
+			for j := range a.VolumeSource.Projected.Sources {
+				b := &a.VolumeSource.Projected.Sources[j]
+				if b.Secret != nil {
+					v1.SetDefaults_SecretVolumeSource(b.Secret)
+				}
+				if b.DownwardAPI != nil {
+					v1.SetDefaults_DownwardAPIVolumeSource(b.DownwardAPI)
+					for k := range b.DownwardAPI.Items {
+						c := &b.DownwardAPI.Items[k]
+						if c.FieldRef != nil {
+							v1.SetDefaults_ObjectFieldSelector(c.FieldRef)
+						}
+					}
+				}
+				if b.ConfigMap != nil {
+					v1.SetDefaults_ConfigMapVolumeSource(b.ConfigMap)
+				}
+			}
+		}
 	}
 	for i := range in.Spec.Template.Spec.InitContainers {
 		a := &in.Spec.Template.Spec.InitContainers[i]
@@ -197,6 +218,27 @@ func SetObjectDefaults_Deployment(in *Deployment) {
 		}
 		if a.VolumeSource.AzureDisk != nil {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
+		}
+		if a.VolumeSource.Projected != nil {
+			v1.SetDefaults_Projections(a.VolumeSource.Projected)
+			for j := range a.VolumeSource.Projected.Sources {
+				b := &a.VolumeSource.Projected.Sources[j]
+				if b.Secret != nil {
+					v1.SetDefaults_SecretVolumeSource(b.Secret)
+				}
+				if b.DownwardAPI != nil {
+					v1.SetDefaults_DownwardAPIVolumeSource(b.DownwardAPI)
+					for k := range b.DownwardAPI.Items {
+						c := &b.DownwardAPI.Items[k]
+						if c.FieldRef != nil {
+							v1.SetDefaults_ObjectFieldSelector(c.FieldRef)
+						}
+					}
+				}
+				if b.ConfigMap != nil {
+					v1.SetDefaults_ConfigMapVolumeSource(b.ConfigMap)
+				}
+			}
 		}
 	}
 	for i := range in.Spec.Template.Spec.InitContainers {
@@ -343,6 +385,27 @@ func SetObjectDefaults_ReplicaSet(in *ReplicaSet) {
 		}
 		if a.VolumeSource.AzureDisk != nil {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
+		}
+		if a.VolumeSource.Projected != nil {
+			v1.SetDefaults_Projections(a.VolumeSource.Projected)
+			for j := range a.VolumeSource.Projected.Sources {
+				b := &a.VolumeSource.Projected.Sources[j]
+				if b.Secret != nil {
+					v1.SetDefaults_SecretVolumeSource(b.Secret)
+				}
+				if b.DownwardAPI != nil {
+					v1.SetDefaults_DownwardAPIVolumeSource(b.DownwardAPI)
+					for k := range b.DownwardAPI.Items {
+						c := &b.DownwardAPI.Items[k]
+						if c.FieldRef != nil {
+							v1.SetDefaults_ObjectFieldSelector(c.FieldRef)
+						}
+					}
+				}
+				if b.ConfigMap != nil {
+					v1.SetDefaults_ConfigMapVolumeSource(b.ConfigMap)
+				}
+			}
 		}
 	}
 	for i := range in.Spec.Template.Spec.InitContainers {

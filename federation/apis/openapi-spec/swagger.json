@@ -12514,6 +12514,23 @@
      }
     }
    },
+   "v1.Projections": {
+    "required": [
+     "sources"
+    ],
+    "properties": {
+     "defaultMode": {
+      "type": "integer",
+      "format": "int32"
+     },
+     "sources": {
+      "type": "array",
+      "items": {
+       "$ref": "#/definitions/v1.VolumeProjection"
+      }
+     }
+    }
+   },
    "v1.QuobyteVolumeSource": {
     "description": "Represents a Quobyte mount that lasts the lifetime of a pod. Quobyte volumes do not support ownership management or SELinux relabeling.",
     "required": [
@@ -12757,6 +12774,10 @@
       "items": {
        "$ref": "#/definitions/v1.KeyToPath"
       }
+     },
+     "name": {
+      "description": "same as above, just matches configmap naming for consistency",
+      "$ref": "#/definitions/v1.LocalObjectReference"
      },
      "optional": {
       "description": "Specify whether the Secret or it's keys must be defined",
@@ -13152,6 +13173,10 @@
       "description": "PhotonPersistentDisk represents a PhotonController persistent disk attached and mounted on kubelets host machine",
       "$ref": "#/definitions/v1.PhotonPersistentDiskVolumeSource"
      },
+     "projected": {
+      "description": "Items for all in one resources secrets, configmaps, and downward API",
+      "$ref": "#/definitions/v1.Projections"
+     },
      "quobyte": {
       "description": "Quobyte represents a Quobyte mount on the host that shares a pod's lifetime",
       "$ref": "#/definitions/v1.QuobyteVolumeSource"
@@ -13192,6 +13217,19 @@
      "subPath": {
       "description": "Path within the volume from which the container's volume should be mounted. Defaults to \"\" (volume's root).",
       "type": "string"
+     }
+    }
+   },
+   "v1.VolumeProjection": {
+    "properties": {
+     "configMap": {
+      "$ref": "#/definitions/v1.ConfigMapVolumeSource"
+     },
+     "downwardAPI": {
+      "$ref": "#/definitions/v1.DownwardAPIVolumeSource"
+     },
+     "secret": {
+      "$ref": "#/definitions/v1.SecretVolumeSource"
      }
     }
    },
