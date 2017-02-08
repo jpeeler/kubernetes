@@ -65,7 +65,6 @@ func SetObjectDefaults_StatefulSet(in *StatefulSet) {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 		}
 		if a.VolumeSource.Projected != nil {
-			v1.SetDefaults_Projections(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
 				if b.Secret != nil {

@@ -75,7 +75,6 @@ func SetObjectDefaults_DaemonSet(in *DaemonSet) {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 		}
 		if a.VolumeSource.Projected != nil {
-			v1.SetDefaults_Projections(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
 				if b.Secret != nil {
@@ -220,7 +219,6 @@ func SetObjectDefaults_Deployment(in *Deployment) {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 		}
 		if a.VolumeSource.Projected != nil {
-			v1.SetDefaults_Projections(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
 				if b.Secret != nil {
@@ -387,7 +385,6 @@ func SetObjectDefaults_ReplicaSet(in *ReplicaSet) {
 			v1.SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 		}
 		if a.VolumeSource.Projected != nil {
-			v1.SetDefaults_Projections(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
 				if b.Secret != nil {

@@ -191,7 +191,6 @@ func SetObjectDefaults_Pod(in *Pod) {
 			SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 		}
 		if a.VolumeSource.Projected != nil {
-			SetDefaults_Projections(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
 				if b.Secret != nil {
@@ -343,7 +342,6 @@ func SetObjectDefaults_PodTemplate(in *PodTemplate) {
 			SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 		}
 		if a.VolumeSource.Projected != nil {
-			SetDefaults_Projections(a.VolumeSource.Projected)
 			for j := range a.VolumeSource.Projected.Sources {
 				b := &a.VolumeSource.Projected.Sources[j]
 				if b.Secret != nil {
@@ -489,7 +487,6 @@ func SetObjectDefaults_ReplicationController(in *ReplicationController) {
 				SetDefaults_AzureDiskVolumeSource(a.VolumeSource.AzureDisk)
 			}
 			if a.VolumeSource.Projected != nil {
-				SetDefaults_Projections(a.VolumeSource.Projected)
 				for j := range a.VolumeSource.Projected.Sources {
 					b := &a.VolumeSource.Projected.Sources[j]
 					if b.Secret != nil {
