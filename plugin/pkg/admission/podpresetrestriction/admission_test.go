@@ -90,7 +90,7 @@ func TestPresetAdmission(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "testNamespace2",
 					Annotations: map[string]string{
-						annotationDefaultSelector: "{'matchExpressions': [{'key': 'openshift.io/build.name', 'operator': 'DoesNotExist' }]}",
+						annotationDefaultSelector: `{"matchExpressions": [{"key": "openshift.io/build.name", "operator": "DoesNotExist" }]}`,
 					},
 				},
 			},
@@ -121,7 +121,7 @@ func TestPresetAdmission(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "testNamespace4",
 					Annotations: map[string]string{
-						annotationDefaultSelector: "{'matchExpressions': [{'key': 'openshift.io/build.name', 'operator': 'DoesNotExist' }]}",
+						annotationDefaultSelector: `{"matchExpressions": [{"key": "openshift.io/build.name", "operator": "DoesNotExist" }]}`,
 					},
 				},
 			},
@@ -145,13 +145,13 @@ func TestPresetAdmission(t *testing.T) {
 
 		err := handler.Admit(admission.NewAttributesRecord(pp, nil, settings.Kind("PodPreset").WithVersion("version"), pp.Namespace, test.namespace.ObjectMeta.Name, settings.Resource("podpresets").WithVersion("version"), "", admission.Create, nil))
 		if test.admit && err != nil {
-			t.Errorf("Test: %s, expected no error but got: %s", test.testName, err)
+			t.Errorf("Test Admit: %s, expected no error but got: %s", test.testName, err)
 		} else if !test.admit && err == nil {
-			t.Errorf("Test: %s, expected an error", test.testName)
+			t.Errorf("Test Admit: %s, expected an error", test.testName)
 		}
 
 		if !reflect.DeepEqual(test.result, pp.Spec.Selector) {
-			t.Errorf("Expected %v, got %v", test.result, pp.Spec.Selector)
+			t.Errorf("(%s):\nExpected %v, got %v", test.testName, test.result, pp.Spec.Selector)
 		}
 	}
 }
