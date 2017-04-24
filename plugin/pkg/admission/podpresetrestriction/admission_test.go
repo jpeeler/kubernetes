@@ -77,8 +77,7 @@ func TestPresetAdmission(t *testing.T) {
 			defaultSelector: metav1.LabelSelector{MatchLabels: map[string]string{"component": "redis"}},
 			namespace: api.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "testNamespace1",
-					Namespace: "namespace1",
+					Name: "testNamespace1",
 				},
 			},
 			result:   metav1.LabelSelector{MatchLabels: map[string]string{"component": "redis"}},
@@ -89,8 +88,7 @@ func TestPresetAdmission(t *testing.T) {
 			defaultSelector: metav1.LabelSelector{MatchLabels: map[string]string{"component": "redis"}},
 			namespace: api.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "testNamespace2",
-					Namespace: "namespace2",
+					Name: "testNamespace2",
 					Annotations: map[string]string{
 						annotationDefaultSelector: "{'matchExpressions': [{'key': 'openshift.io/build.name', 'operator': 'DoesNotExist' }]}",
 					},
@@ -110,8 +108,7 @@ func TestPresetAdmission(t *testing.T) {
 			defaultSelector: metav1.LabelSelector{},
 			namespace: api.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "testNamespace3",
-					Namespace: "namespace3",
+					Name: "testNamespace3",
 				},
 			},
 			result:   metav1.LabelSelector{},
@@ -122,8 +119,7 @@ func TestPresetAdmission(t *testing.T) {
 			defaultSelector: metav1.LabelSelector{},
 			namespace: api.Namespace{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:      "testNamespace4",
-					Namespace: "namespace4",
+					Name: "testNamespace4",
 					Annotations: map[string]string{
 						annotationDefaultSelector: "{'matchExpressions': [{'key': 'openshift.io/build.name', 'operator': 'DoesNotExist' }]}",
 					},
@@ -142,7 +138,7 @@ func TestPresetAdmission(t *testing.T) {
 	}
 	for _, test := range tests {
 		informerFactory.Core().InternalVersion().Namespaces().Informer().GetStore().Update(test.namespace)
-		pp.Namespace = test.namespace.ObjectMeta.Namespace
+		pp.Namespace = test.namespace.ObjectMeta.Name
 		informerFactory.Settings().InternalVersion().PodPresets().Informer().GetStore().Add(pp)
 
 		handler.pluginConfig = &pluginapi.Configuration{DefaultSelector: test.defaultSelector}
