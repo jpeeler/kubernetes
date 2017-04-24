@@ -137,7 +137,7 @@ func TestPresetAdmission(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		informerFactory.Core().InternalVersion().Namespaces().Informer().GetStore().Update(test.namespace)
+		informerFactory.Core().InternalVersion().Namespaces().Informer().GetStore().Update(&test.namespace)
 		pp.Namespace = test.namespace.ObjectMeta.Name
 		informerFactory.Settings().InternalVersion().PodPresets().Informer().GetStore().Add(pp)
 
