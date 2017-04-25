@@ -36,15 +36,6 @@ import (
 
 // TestPresetAdmission verifies various scenarios involving preset selector modifications
 func TestPresetAdmission(t *testing.T) {
-	mockClient := &fake.Clientset{}
-	handler, informerFactory, err := newHandlerForTest(mockClient)
-	if err != nil {
-		t.Errorf("unexpected error initializing handler: %v", err)
-	}
-	stopCh := make(chan struct{})
-	defer close(stopCh)
-	informerFactory.Start(stopCh)
-
 	pp := settings.PodPreset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "pp",
@@ -139,6 +130,15 @@ func TestPresetAdmission(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
+		mockClient := &fake.Clientset{}
+		handler, informerFactory, err := newHandlerForTest(mockClient)
+		if err != nil {
+			t.Errorf("unexpected error initializing handler: %v", err)
+		}
+		stopCh := make(chan struct{})
+		//defer close(stopCh)
+		informerFactory.Start(stopCh)
+
 		informerFactory.Core().InternalVersion().Namespaces().Informer().GetStore().Update(&test.namespace)
 		pp.Namespace = test.namespace.ObjectMeta.Name
 		informerFactory.Settings().InternalVersion().PodPresets().Informer().GetStore().Add(&pp)
@@ -149,7 +149,7 @@ func TestPresetAdmission(t *testing.T) {
 			return true, &test.namespace, nil
 		})
 
-		err := handler.Admit(admission.NewAttributesRecord(&pp, nil, settings.Kind("PodPreset").WithVersion("version"), pp.Namespace, test.namespace.ObjectMeta.Name, settings.Resource("podpresets").WithVersion("version"), "", admission.Create, nil))
+		err = handler.Admit(admission.NewAttributesRecord(&pp, nil, settings.Kind("PodPreset").WithVersion("version"), pp.Namespace, test.namespace.ObjectMeta.Name, settings.Resource("podpresets").WithVersion("version"), "", admission.Create, nil))
 		if test.admit && err != nil {
 			t.Errorf("Test Admit: %s, expected no error but got: %s", test.testName, err)
 		} else if !test.admit && err == nil {
@@ -159,6 +159,7 @@ func TestPresetAdmission(t *testing.T) {
 		if !reflect.DeepEqual(test.result, pp.Spec.Selector) {
 			t.Errorf("(%s):\nExpected %#v, got %#v", test.testName, test.result, pp.Spec.Selector)
 		}
+		close(stopCh)
 	}
 }
 
