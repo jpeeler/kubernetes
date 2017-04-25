@@ -22,7 +22,9 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apiserver/pkg/admission"
+	core "k8s.io/client-go/testing"
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/apis/settings"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
@@ -43,7 +45,7 @@ func TestPresetAdmission(t *testing.T) {
 	defer close(stopCh)
 	informerFactory.Start(stopCh)
 
-	pp := &settings.PodPreset{
+	pp := settings.PodPreset{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "pp",
 		},
@@ -139,11 +141,15 @@ func TestPresetAdmission(t *testing.T) {
 	for _, test := range tests {
 		informerFactory.Core().InternalVersion().Namespaces().Informer().GetStore().Update(&test.namespace)
 		pp.Namespace = test.namespace.ObjectMeta.Name
-		informerFactory.Settings().InternalVersion().PodPresets().Informer().GetStore().Add(pp)
+		informerFactory.Settings().InternalVersion().PodPresets().Informer().GetStore().Add(&pp)
 
 		handler.pluginConfig = &pluginapi.Configuration{DefaultSelector: test.defaultSelector}
 
-		err := handler.Admit(admission.NewAttributesRecord(pp, nil, settings.Kind("PodPreset").WithVersion("version"), pp.Namespace, test.namespace.ObjectMeta.Name, settings.Resource("podpresets").WithVersion("version"), "", admission.Create, nil))
+		mockClient.AddReactor("get", "namespaces", func(action core.Action) (bool, runtime.Object, error) {
+			return true, &test.namespace, nil
+		})
+
+		err := handler.Admit(admission.NewAttributesRecord(&pp, nil, settings.Kind("PodPreset").WithVersion("version"), pp.Namespace, test.namespace.ObjectMeta.Name, settings.Resource("podpresets").WithVersion("version"), "", admission.Create, nil))
 		if test.admit && err != nil {
 			t.Errorf("Test Admit: %s, expected no error but got: %s", test.testName, err)
 		} else if !test.admit && err == nil {
@@ -151,7 +157,7 @@ func TestPresetAdmission(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(test.result, pp.Spec.Selector) {
-			t.Errorf("(%s):\nExpected %v, got %v", test.testName, test.result, pp.Spec.Selector)
+			t.Errorf("(%s):\nExpected %#v, got %#v", test.testName, test.result, pp.Spec.Selector)
 		}
 	}
 }

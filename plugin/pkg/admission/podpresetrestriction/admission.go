@@ -107,7 +107,7 @@ func (p *podPresetRestrictionPlugin) Admit(attributes admission.Attributes) erro
 			applyAdmissionConfiguration(p.pluginConfig, podpreset)
 		}
 	} else {
-		glog.V(6).Infof("No annotations present on namespace %s", namespace.Name)
+		glog.V(6).Infof("No annotations present on namespace %s", nsName)
 		applyAdmissionConfiguration(p.pluginConfig, podpreset)
 	}
 
@@ -115,11 +115,12 @@ func (p *podPresetRestrictionPlugin) Admit(attributes admission.Attributes) erro
 }
 
 func applyAdmissionConfiguration(pluginConfig *pluginapi.Configuration, podpreset *settings.PodPreset) {
-	if podpreset.Spec.Selector.MatchLabels == nil {
+	if podpreset.Spec.Selector.MatchLabels == nil && len(pluginConfig.DefaultSelector.MatchLabels) > 0 {
 		podpreset.Spec.Selector.MatchLabels = make(map[string]string)
 	}
 	for key, value := range pluginConfig.DefaultSelector.MatchLabels {
 		podpreset.Spec.Selector.MatchLabels[key] = value
+		glog.V(6).Infof("Added MatchLabels %s/%s", key, value)
 	}
 	podpreset.Spec.Selector.MatchExpressions = append(podpreset.Spec.Selector.MatchExpressions, pluginConfig.DefaultSelector.MatchExpressions...)
 	glog.V(5).Infof("Applied match configuration from config to podpreset %v: %#v", podpreset.Name, podpreset.Spec.Selector)
