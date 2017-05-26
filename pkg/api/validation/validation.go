@@ -22,6 +22,7 @@ import (
 	"net"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -824,6 +825,25 @@ func validateDownwardAPIVolumeSource(downwardAPIVolume *api.DownwardAPIVolumeSou
 	return allErrs
 }
 
+func validatePaths(path string, allPaths sets.String) error {
+	// check for duplicate path first
+	if allPaths.Has(path) {
+		return fmt.Errorf("Conflicting duplicate path: %s", path)
+	}
+
+	// check for subpath conflict
+	for _, apath := range allPaths.List() {
+		rel, err := filepath.Rel(path, apath)
+		if err != nil {
+			return err
+		}
+		if !strings.Contains(rel, "../") {
+			return fmt.Errorf("volumeMounts may not overlap one another; volumeMount '%v' overlaps with volumeMount '%v'", path, apath)
+		}
+	}
+	return nil
+}
+
 func validateProjectionSources(projection *api.ProjectedVolumeSource, projectionMode *int32, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 	allPaths := sets.String{}
@@ -844,10 +864,10 @@ func validateProjectionSources(projection *api.ProjectedVolumeSource, projection
 					allErrs = append(allErrs, validateKeyToPath(&kp, itemPath)...)
 					if len(kp.Path) > 0 {
 						curPath := kp.Path
-						if !allPaths.Has(curPath) {
-							allPaths.Insert(curPath)
+						if err := validatePaths(curPath, allPaths); err != nil {
+							allErrs = append(allErrs, field.Invalid(fldPath, source.Secret.Name, err.Error()))
 						} else {
-							allErrs = append(allErrs, field.Invalid(fldPath, source.Secret.Name, "conflicting duplicate paths"))
+							allPaths.Insert(curPath)
 						}
 					}
 				}
@@ -867,12 +887,11 @@ func validateProjectionSources(projection *api.ProjectedVolumeSource, projection
 					allErrs = append(allErrs, validateKeyToPath(&kp, itemPath)...)
 					if len(kp.Path) > 0 {
 						curPath := kp.Path
-						if !allPaths.Has(curPath) {
-							allPaths.Insert(curPath)
+						if err := validatePaths(curPath, allPaths); err != nil {
+							allErrs = append(allErrs, field.Invalid(fldPath, source.ConfigMap.Name, err.Error()))
 						} else {
-							allErrs = append(allErrs, field.Invalid(fldPath, source.ConfigMap.Name, "conflicting duplicate paths"))
+							allPaths.Insert(curPath)
 						}
-
 					}
 				}
 			}
@@ -886,12 +905,11 @@ func validateProjectionSources(projection *api.ProjectedVolumeSource, projection
 					allErrs = append(allErrs, validateDownwardAPIVolumeFile(&file, fldPath.Child("downwardAPI"))...)
 					if len(file.Path) > 0 {
 						curPath := file.Path
-						if !allPaths.Has(curPath) {
-							allPaths.Insert(curPath)
+						if err := validatePaths(curPath, allPaths); err != nil {
+							allErrs = append(allErrs, field.Invalid(fldPath, curPath, err.Error()))
 						} else {
-							allErrs = append(allErrs, field.Invalid(fldPath, curPath, "conflicting duplicate paths"))
+							allPaths.Insert(curPath)
 						}
-
 					}
 				}
 			}

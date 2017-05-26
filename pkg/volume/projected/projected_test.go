@@ -27,7 +27,10 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
+	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/kubernetes/pkg/api/validation"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/clientset/fake"
 	"k8s.io/kubernetes/pkg/volume"
@@ -280,6 +283,119 @@ func TestCollectDataWithSecret(t *testing.T) {
 		}
 		if e, a := tc.payload, actualPayload; !reflect.DeepEqual(e, a) {
 			t.Errorf("%v: expected and actual payload do not match", tc.name)
+		}
+	}
+}
+
+func TestVolumePodSpec(t *testing.T) {
+	cases := []struct {
+		name       string
+		mappings   []v1.KeyToPath
+		volumeFile []v1.DownwardAPIVolumeFile
+		success    bool
+	}{
+		{
+			name: "conflicting duplicate paths",
+			mappings: []v1.KeyToPath{
+				{
+					Key:  "foo",
+					Path: "path/to/data.txt",
+				},
+				{
+					Key:  "bar",
+					Path: "path/to/data.txt",
+				},
+			},
+			volumeFile: []v1.DownwardAPIVolumeFile{
+				{
+					Path:     "labels",
+					FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.labels"},
+				},
+				{
+					Path:     "labels",
+					FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.labels"},
+				},
+			},
+			success: false,
+		},
+		{
+			name: "conflicting subdirectories",
+			mappings: []v1.KeyToPath{
+				{
+					Key:  "foo",
+					Path: "path/to",
+				},
+				{
+					Key:  "bar",
+					Path: "path/to/data.txt",
+				},
+			},
+			volumeFile: []v1.DownwardAPIVolumeFile{
+				{
+					Path:     "path/labels",
+					FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.labels"},
+				},
+				{
+					Path:     "path/to/labels",
+					FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.labels"},
+				},
+			},
+			success: false,
+		},
+	}
+
+	for _, tc := range cases {
+
+		volumesV1 := []v1.Volume{
+			{
+				Name: "test-volume-name",
+				VolumeSource: v1.VolumeSource{
+					Projected: &v1.ProjectedVolumeSource{
+						Sources: []v1.VolumeProjection{
+							{
+								Secret: &v1.SecretProjection{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: "test-secret",
+									},
+									Items: tc.mappings,
+								},
+							},
+							{
+								ConfigMap: &v1.ConfigMapProjection{
+									LocalObjectReference: v1.LocalObjectReference{
+										Name: "test-configmap",
+									},
+									Items: tc.mappings,
+								},
+							},
+							{
+								DownwardAPI: &v1.DownwardAPIProjection{
+									Items: tc.volumeFile,
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		volumesApi := make([]api.Volume, len(volumesV1))
+		for i := range volumesV1 {
+			if err := v1.Convert_v1_Volume_To_api_Volume(&volumesV1[i], &volumesApi[i], nil); err != nil {
+				t.Errorf("API conversion error")
+			}
+		}
+		_, vErrs := validation.ValidateVolumes(volumesApi, field.NewPath("volumes"))
+		if len(vErrs) != 0 && tc.success {
+			t.Errorf("%v: unexpected validation failure: %v", tc.name, vErrs)
+			continue
+		}
+		if len(vErrs) == 0 && !tc.success {
+			t.Errorf("%v: unexpected validation success", tc.name)
+			continue
+		}
+		if !tc.success {
+			continue
 		}
 	}
 }
